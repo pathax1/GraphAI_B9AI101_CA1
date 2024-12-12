@@ -1,6 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
+import seaborn as sns
+import networkx as nx
+from pyvis.network import Network
 
 class TransportVisualization:
     def __init__(self, bus_data, dart_data, luas_data):
@@ -46,6 +49,22 @@ class TransportVisualization:
         else:
             st.error("Columns 'Route Number' or 'Key Landmarks' not found in BUS dataset.")
 
+    def plot_heatmap_landmarks(self):
+        """
+        Heatmap: Routes vs Number of Key Landmarks
+        Dataset: BUS_Dataset
+        """
+        if "Route Number" in self.bus_data.columns and "Key Landmarks" in self.bus_data.columns:
+            self.bus_data["Landmarks Count"] = self.bus_data["Key Landmarks"].str.split(",").apply(len)
+            pivot_table = self.bus_data.pivot_table(
+                index="Route Number", values="Landmarks Count", aggfunc="sum"
+            )
+            fig, ax = plt.subplots(figsize=(12, 8))
+            sns.heatmap(pivot_table, annot=True, fmt="g", cmap="coolwarm", ax=ax)
+            ax.set_title("Heatmap of Key Landmarks by Routes", fontsize=14)
+            st.pyplot(fig)
+        else:
+            st.error("Columns 'Route Number' or 'Key Landmarks' not found in BUS dataset.")
     # --------------------------------------
     # Visualizations for DART_Dataset
     # --------------------------------------
@@ -102,6 +121,26 @@ class TransportVisualization:
         else:
             st.error("Column 'Routes Serviced' not found in DART dataset.")
 
+    def plot_treemap_facilities(self):
+        """
+        Treemap: Facilities Distribution
+        Dataset: DART_Dataset
+        """
+        facility_columns = [
+            "ATM", "Wi-Fi & Internet Access", "Refreshments",
+            "Phone Charging", "Ticket Vending Machine", "Smart Card Enabled"
+        ]
+
+        facilities_count = {
+            col: self.dart_data[col].value_counts().get("Yes", 0) for col in facility_columns
+        }
+        if facilities_count:
+            import plotly.express as px
+            treemap_data = pd.DataFrame(list(facilities_count.items()), columns=["Facility", "Count"])
+            fig = px.treemap(treemap_data, path=["Facility"], values="Count", title="Facility Distribution")
+            st.plotly_chart(fig)
+        else:
+            st.error("Facility data not found in DART dataset.")
     # --------------------------------------
     # Visualizations for LUAS_Dataset
     # --------------------------------------
@@ -120,6 +159,24 @@ class TransportVisualization:
             ax.set_xlabel("Line", fontsize=12)
             ax.set_ylabel("Total Daily Footfall", fontsize=12)
             plt.xticks(rotation=45)
+            st.pyplot(fig)
+        else:
+            st.error("Columns 'Line' or 'Daily Footfall' not found in LUAS dataset.")
+
+    def plot_footfall_trends(self):
+        """
+        Line Chart: Daily Footfall Trends by Line
+        Dataset: LUAS_Dataset
+        """
+        if "Line" in self.luas_data.columns and "Daily Footfall" in self.luas_data.columns:
+            self.luas_data["Daily Footfall"] = self.luas_data["Daily Footfall"].str.replace(",", "").astype(float)
+            footfall_trends = self.luas_data.groupby("Line")["Daily Footfall"].sum()
+
+            fig, ax = plt.subplots(figsize=(12, 6))
+            footfall_trends.plot(kind="line", marker="o", ax=ax)
+            ax.set_title("Daily Footfall Trends by Line", fontsize=14)
+            ax.set_xlabel("Line", fontsize=12)
+            ax.set_ylabel("Total Daily Footfall", fontsize=12)
             st.pyplot(fig)
         else:
             st.error("Columns 'Line' or 'Daily Footfall' not found in LUAS dataset.")
@@ -201,3 +258,24 @@ class TransportVisualization:
             st.dataframe(zone_station_counts.reset_index().rename(columns={"Station Name": "Station Count"}))
         else:
             st.error("Columns 'Station Name' or 'Zone' not found in LUAS dataset.")
+
+    def plot_accessibility_sunburst(self):
+        """
+        Sunburst Chart: Accessibility by Zone
+        Dataset: LUAS_Dataset
+        """
+        if "Accessibility" in self.luas_data.columns and "Zone" in self.luas_data.columns:
+            import plotly.express as px
+            fig = px.sunburst(
+                self.luas_data,
+                path=["Zone", "Accessibility"],
+                title="Accessibility Distribution by Zone",
+                color="Zone",
+            )
+            st.plotly_chart(fig)
+        else:
+            st.error("Columns 'Accessibility' or 'Zone' not found in LUAS dataset.")
+
+    # --------------------------------------
+    # Visualizations for LUAS_Dataset
+    # --------------------------------------

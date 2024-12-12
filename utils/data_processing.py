@@ -144,3 +144,29 @@ class IrishTransportData:
             return fig
         else:
             print("'Routes Serviced' column not found in the dataset.")
+
+    def advanced_correlation_analysis(self, data):
+        """
+        Perform correlation analysis between numeric columns.
+        """
+        if data is not None:
+            numeric_data = data.select_dtypes(include=['number'])
+            if not numeric_data.empty:
+                correlation_matrix = numeric_data.corr()
+                print("Correlation Matrix:")
+                print(correlation_matrix)
+
+                # Heatmap visualization
+                fig, ax = plt.subplots(figsize=(10, 8))
+                cax = ax.matshow(correlation_matrix, cmap='coolwarm')
+                plt.colorbar(cax)
+                ax.set_xticks(range(len(correlation_matrix.columns)))
+                ax.set_xticklabels(correlation_matrix.columns, rotation=90)
+                ax.set_yticks(range(len(correlation_matrix.columns)))
+                ax.set_yticklabels(correlation_matrix.columns)
+                ax.set_title("Correlation Heatmap", pad=20)
+                return fig
+            else:
+                print("No numeric columns found for correlation analysis.")
+        else:
+            print("Dataset not loaded.")
